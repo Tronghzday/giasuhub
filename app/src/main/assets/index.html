@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GiaSuHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Spectral:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+          --paper:#EDF2E6; --paper2:#E2EADA; --paper-deep:#223328;
+          --rule:#B9CBAF; --rule-strong:#9CB292;
+          --ink:#22322A; --ink-soft:#61715F;
+          --red:#A5382F; --red-soft:rgba(165,56,47,.10); --red-line:rgba(165,56,47,.35);
+          --gold:#B8842E;
+          --radius:6px;
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        html,body{background:var(--paper);}
+        body{
+          font-family:'Be Vietnam Pro',sans-serif;color:var(--ink);
+          max-width:480px;margin:0 auto;min-height:100vh;
+          -webkit-tap-highlight-color:transparent;
+          background-image:
+            linear-gradient(var(--rule) 1px, transparent 1px);
+          background-size:100% 34px;
+          background-attachment:local;
+        }
+        button{font-family:inherit;}
+        .serif{font-family:'Spectral',serif;}
+        .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+
+        /* ─── HEADER: bìa sổ ─── */
+        .ledger-header{
+          background:var(--paper-deep);color:#EFE9D8;padding:20px 18px 16px;
+          border-bottom:3px solid var(--gold);
+          position:relative;
+        }
+        .ledger-header .brand{display:flex;align-items:baseline;gap:8px;}
+        .ledger-header .brand-mark{
+          width:30px;height:30px;border:2px solid #EFE9D8;border-radius:50%;
+          display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;
+        }
+        .ledger-header h1{font-family:'Spectral',serif;font-size:1.28rem;font-weight:700;letter-spacing:.01em;}
+        .ledger-header .tagline{
+          font-size:.66rem;color:#B9C4AE;text-transform:uppercase;letter-spacing:.14em;
+          margin-top:3px;margin-left:38px;
+        }
+        .month-nav{
+          display:flex;align-items:center;justify-content:center;gap:16px;margin-top:16px;
+        }
+        .month-nav button{
+          width:26px;height:26px;border:1.5px solid #55654E;border-radius:50%;
+          background:transparent;color:#EFE9D8;font-size:1rem;cursor:pointer;line-height:1;
+        }
+        .month-nav button:active{background:#3A4B3E;}
+        .month-label{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:.9rem;min-width:76px;text-align:center;letter-spacing:.03em;}
+
+        /* ─── TALLY ROW (thay stat-float) ─── */
+        .tally-row{display:flex;gap:10px;margin:-14px 16px 6px;position:relative;z-index:5;}
+        .tally-tab{
+          flex:1;background:var(--paper);border:1.5px solid var(--paper-deep);
+          box-shadow:3px 3px 0 var(--rule-strong);
+          padding:9px 6px 8px;text-align:center;
+        }
+        .tally-tab .lbl{font-size:.6rem;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;}
+        .tally-tab .val{font-family:'IBM Plex Mono',monospace;font-size:.98rem;font-weight:700;}
+        .tally-tab .v-red{color:var(--red);}
+        .tally-tab .v-ink{color:var(--ink);}
+
+        /* ─── PAGES ─── */
+        .page{display:none;padding:0 16px 92px;}
+        .page.active{display:block;animation:fadeIn .18s ease;}
+        @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+        .ledger-section-title{
+          font-family:'Spectral',serif;font-size:.86rem;font-weight:700;
+          margin:18px 0 9px;color:var(--ink);
+          display:flex;align-items:center;gap:8px;
+        }
+        .ledger-section-title::after{content:'';flex:1;height:1px;background:var(--rule-strong);}
+
+        /* ─── LEDGER PAGE BLOCK (khung giấy chung) ─── */
+        .ledger-card{
+          background:var(--paper);border:1.5px solid var(--paper-deep);
+          box-shadow:4px 4px 0 var(--rule-strong);
+          padding:14px;margin-bottom:14px;
+        }
+        .ledger-card h3{
+          font-family:'Spectral',serif;font-size:.92rem;font-weight:700;margin-bottom:13px;
+          padding-bottom:8px;border-bottom:1.5px dashed var(--rule-strong);
+        }
+
+        /* ─── CALENDAR ─── */
+        .cal-dow{
+          display:grid;grid-template-columns:repeat(7,1fr);text-align:center;
+          font-family:'IBM Plex Mono',monospace;font-size:.62rem;font-weight:600;
+          color:var(--ink-soft);margin-bottom:5px;
+        }
+        .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--rule-strong);border-left:1px solid var(--rule-strong);}
+        .cal-day{
+          aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+          cursor:pointer;border-right:1px solid var(--rule-strong);border-bottom:1px solid var(--rule-strong);
+          position:relative;
+        }
+        .cal-day:active{background:var(--paper2);}
+        .cal-day.empty{cursor:default;background:repeating-linear-gradient(135deg,transparent,transparent 5px,var(--rule) 5px,var(--rule) 6px);}
+        .cal-day .dnum{font-family:'IBM Plex Mono',monospace;font-size:.76rem;font-weight:600;color:var(--ink);}
+        .cal-day.today{background:var(--red-soft);}
+        .cal-day.today .dnum{color:var(--red);font-weight:700;}
+        .cal-day.selected{background:var(--paper-deep);}
+        .cal-day.selected .dnum{color:#EFE9D8;}
+        .cal-day .ticks{display:flex;gap:1.5px;height:8px;align-items:flex-end;}
+        .cal-day .tick{width:2px;height:5px;background:var(--rule-strong);}
+        .cal-day .tick.done{height:8px;background:var(--red);}
+        .cal-day.selected .tick{background:#55654E;}
+        .cal-day.selected .tick.done{background:#EFE9D8;}
+
+        /* ─── FAB THÊM BUỔI (con dấu vuông) ─── */
+        #fabAddSlot{
+          display:none;width:28px;height:28px;border:2px dashed var(--red);
+          background:var(--paper);cursor:pointer;color:var(--red);
+          font-size:1.15rem;font-weight:300;line-height:1;
+          align-items:center;justify-content:center;flex-shrink:0;
+          transform:rotate(-4deg);
+        }
+        #fabAddSlot.visible{display:flex;}
+        #fabAddSlot:active{transform:rotate(-4deg) scale(.85);background:var(--red-soft);}
+
+        /* ─── LEDGER LINE (dòng buổi học / dòng lớp) ─── */
+        .ledger-line{
+          display:flex;align-items:center;gap:11px;padding:11px 2px;
+          border-bottom:1px dashed var(--rule-strong);
+        }
+        .ledger-line:last-child{border-bottom:none;}
+
+        /* con dấu tick */
+        .stamp-btn{
+          width:34px;height:34px;min-width:34px;border-radius:50%;
+          border:2px solid var(--rule-strong);background:transparent;cursor:pointer;
+          display:flex;align-items:center;justify-content:center;
+          font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:1rem;color:transparent;
+          transition:transform .15s cubic-bezier(.34,1.56,.64,1);
+        }
+        .stamp-btn.on{
+          border-color:var(--red);color:var(--red);background:var(--red-soft);
+          transform:rotate(-9deg) scale(1.05);
+          box-shadow:0 0 0 1px var(--red) inset;
+        }
+        .stamp-btn:active{transform:scale(.85);}
+        .stamp-btn.on:active{transform:rotate(-9deg) scale(.92);}
+
+        .line-body{flex:1;min-width:0;}
+        .line-top{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;margin-bottom:2px;}
+        .line-body .name{font-family:'Spectral',serif;font-weight:700;font-size:.92rem;color:var(--ink);}
+        .tag-mini{
+          font-family:'IBM Plex Mono',monospace;font-size:.6rem;font-weight:600;color:var(--ink-soft);
+          border:1px solid var(--rule-strong);padding:1px 6px;white-space:nowrap;
+        }
+        .tag-mini.tag-extra{color:var(--red);border-color:var(--red-line);}
+        .line-body .meta{font-size:.7rem;color:var(--ink-soft);margin-top:2px;font-style:italic;}
+
+        .line-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+        .money{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:.9rem;color:var(--red);}
+        .money.off{color:var(--ink-soft);text-decoration:line-through;font-weight:500;}
+        .btn-edit-mini{
+          font-family:'IBM Plex Mono',monospace;font-size:.64rem;font-weight:600;color:var(--ink-soft);
+          background:none;border:none;border-bottom:1px solid var(--ink-soft);cursor:pointer;padding:0;
+        }
+        .btn-edit-mini:active{color:var(--ink);}
+
+        .ledger-empty{
+          text-align:center;padding:30px 16px;color:var(--ink-soft);font-size:.82rem;
+          border:1.5px dashed var(--rule-strong);
+        }
+        .ledger-empty .icon{font-size:1.8rem;margin-bottom:8px;opacity:.6;}
+
+        /* ─── OVERLAYS / MODALS ─── */
+        .overlay{
+          display:none;position:fixed;inset:0;background:rgba(34,50,42,.55);
+          z-index:200;align-items:flex-end;justify-content:center;
+        }
+        .overlay.show{display:flex;}
+        .modal{
+          background:var(--paper);border-top:3px solid var(--paper-deep);
+          padding:20px 18px 36px;width:100%;max-width:480px;
+          animation:slideUp .2s ease;max-height:90vh;overflow-y:auto;
+        }
+        @keyframes slideUp{from{transform:translateY(50px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+        .modal-handle{width:34px;height:4px;background:var(--rule-strong);margin:0 auto 16px;}
+        .modal h3{font-family:'Spectral',serif;font-size:1rem;font-weight:700;margin-bottom:3px;color:var(--ink);}
+        .modal-sub{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--ink-soft);margin-bottom:16px;}
+        .modal label,.ledger-card label{
+          font-size:.65rem;font-weight:700;color:var(--ink-soft);
+          text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:6px;
+        }
+        .class-picker{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;}
+        .class-chip{
+          padding:7px 13px;border:1.5px solid var(--rule-strong);background:transparent;
+          color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:.76rem;font-weight:600;cursor:pointer;white-space:nowrap;
+        }
+        .class-chip.selected{background:var(--paper-deep);border-color:var(--paper-deep);color:#EFE9D8;}
+        .modal input,.ledger-card input{
+          width:100%;background:transparent;border:none;border-bottom:1.5px solid var(--rule-strong);
+          color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:.9rem;padding:8px 2px;margin-bottom:14px;
+          outline:none;transition:border-color .15s;
+        }
+        .modal input:focus,.ledger-card input:focus{border-color:var(--red);}
+        .price-hint{font-size:.7rem;color:var(--ink-soft);margin-top:-9px;margin-bottom:14px;}
+        .modal-actions{display:flex;gap:9px;margin-top:6px;}
+        .btn-primary{
+          flex:1;padding:12px;border:1.5px solid var(--paper-deep);color:#EFE9D8;
+          font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;cursor:pointer;
+          background:var(--paper-deep);letter-spacing:.03em;
+        }
+        .btn-primary:active{transform:scale(.97);}
+        .btn-ghost{
+          padding:12px 16px;background:transparent;border:1.5px solid var(--rule-strong);
+          color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:600;cursor:pointer;
+        }
+        .btn-ghost:active{background:var(--paper2);}
+        .btn-delete-extra{
+          width:100%;margin-top:14px;padding:10px;background:transparent;border:1.5px dashed var(--red-line);
+          color:var(--red);font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:700;cursor:pointer;
+        }
+
+        /* ─── MANAGE ─── */
+        .class-list-item{
+          display:flex;align-items:center;justify-content:space-between;
+          padding:11px 2px;border-bottom:1px dashed var(--rule-strong);gap:10px;
+        }
+        .class-list-item:last-child{border-bottom:none;}
+        .class-list-item .info .name{font-family:'Spectral',serif;font-weight:700;font-size:.9rem;}
+        .class-list-item .info .meta{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--ink-soft);margin-top:3px;}
+        .btn-void{
+          background:transparent;border:1.5px dashed var(--red-line);color:var(--red);
+          font-family:'IBM Plex Mono',monospace;font-size:.68rem;font-weight:700;
+          padding:5px 10px;cursor:pointer;white-space:nowrap;transform:rotate(-2deg);
+        }
+        .btn-void:active{transform:rotate(-2deg) scale(.92);background:var(--red-soft);}
+
+        /* ─── EXPORT ─── */
+        .export-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed var(--rule-strong);font-size:.82rem;}
+        .export-row:last-child{border-bottom:none;}
+        .export-row .lbl{color:var(--ink-soft);font-weight:600;}
+        .export-row .val{font-family:'IBM Plex Mono',monospace;font-weight:700;}
+        .c-red{color:var(--red);}
+        .c-ink{color:var(--ink);}
+        .c-gold{color:var(--gold);}
+        .btn-copy{
+          width:100%;padding:12px;background:var(--paper-deep);border:1.5px solid var(--paper-deep);
+          color:#EFE9D8;font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:700;cursor:pointer;
+          letter-spacing:.04em;
+        }
+        .btn-copy:active{transform:scale(.98);}
+
+        .cls-block{
+          background:var(--paper);border:1.5px solid var(--rule-strong);margin-bottom:11px;
+        }
+        .cls-block-header{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;gap:10px;border-bottom:1.5px dashed var(--rule-strong);}
+        .cls-block-header .cls-name{font-family:'Spectral',serif;font-weight:700;font-size:.9rem;}
+        .cls-block-header .cls-sub-meta{font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--ink-soft);margin-top:2px;}
+        .cls-block-right{text-align:right;flex-shrink:0;}
+        .badge-buoi{
+          display:inline-block;background:transparent;border:1.5px solid var(--rule-strong);
+          color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:.64rem;font-weight:700;padding:2px 7px;white-space:nowrap;
+        }
+        .badge-buoi.has-done{border-color:var(--red-line);color:var(--red);}
+        .cls-money{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:.88rem;margin-top:4px;color:var(--red);}
+        .cls-money.zero{color:var(--ink-soft);}
+        .cls-sessions{padding:2px 0 2px;}
+        .session-row{display:flex;align-items:center;gap:8px;padding:6px 13px;border-bottom:1px dashed #DCE6D5;font-size:.72rem;}
+        .session-row:last-child{border-bottom:none;}
+        .s-date{font-family:'IBM Plex Mono',monospace;color:var(--ink);font-weight:600;flex:1;}
+        .s-note{color:var(--ink-soft);font-style:italic;font-size:.67rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:78px;}
+        .s-price{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--red);white-space:nowrap;font-size:.76rem;}
+        .btn-copy-cls-full{
+          width:100%;padding:9px;border:none;border-top:1.5px dashed var(--rule-strong);background:transparent;
+          color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:.68rem;font-weight:700;cursor:pointer;
+        }
+        .btn-copy-cls-full:active{background:var(--paper2);}
+
+        /* ─── CONFIRM DIALOG ─── */
+        .confirm-overlay{
+          display:none;position:fixed;inset:0;background:rgba(34,50,42,.6);
+          z-index:500;align-items:center;justify-content:center;padding:20px;
+        }
+        .confirm-overlay.show{display:flex;}
+        .confirm-box{
+          background:var(--paper);border:2px solid var(--paper-deep);box-shadow:5px 5px 0 var(--rule-strong);
+          padding:22px 20px 18px;width:100%;max-width:330px;animation:slideUp .18s ease;text-align:center;
+        }
+        .confirm-box .confirm-icon{font-size:1.7rem;margin-bottom:8px;}
+        .confirm-box .confirm-title{font-family:'Spectral',serif;font-size:1rem;font-weight:700;margin-bottom:8px;}
+        .confirm-box .confirm-msg{font-size:.78rem;color:var(--ink-soft);line-height:1.6;margin-bottom:18px;}
+        .confirm-btns{display:flex;gap:9px;}
+        .confirm-btns .btn-ghost{flex:1;}
+        .confirm-btns .btn-danger-full{
+          flex:1;padding:12px;border:1.5px solid var(--red);color:#fff;font-family:'IBM Plex Mono',monospace;
+          font-size:.8rem;font-weight:700;cursor:pointer;background:var(--red);
+        }
+        .confirm-btns .btn-danger-full:active{transform:scale(.96);}
+
+        /* ─── TOAST (mảnh giấy nhỏ) ─── */
+        .toast{
+          position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(16px) rotate(-1deg);
+          background:var(--paper-deep);color:#EFE9D8;padding:9px 20px;
+          font-family:'IBM Plex Mono',monospace;font-size:.76rem;font-weight:600;opacity:0;pointer-events:none;
+          transition:opacity .2s,transform .2s;z-index:999;white-space:nowrap;border:1.5px solid var(--gold);
+        }
+        .toast.show{opacity:1;transform:translateX(-50%) translateY(0) rotate(-1deg);}
+
+        /* ─── BOTTOM NAV: gáy sổ kiểu tab ─── */
+        .bottom-nav{
+          position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;
+          background:var(--paper-deep);display:flex;padding:6px 8px calc(14px + env(safe-area-inset-bottom,0px));
+          z-index:150;gap:6px;
+        }
+        .nav-btn{
+          flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+          cursor:pointer;padding:8px 0 6px;font-family:'IBM Plex Mono',monospace;
+          font-size:.6rem;font-weight:600;color:#8B9A85;border:none;background:transparent;
+          border-bottom:2px solid transparent;letter-spacing:.02em;
+        }
+        .nav-btn .nav-icon{font-size:1.05rem;}
+        .nav-btn.active{color:#EFE9D8;border-bottom-color:var(--gold);}
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="ledger-header">
+    <div class="brand">
+        <span class="brand-mark">🐷</span>
+        <h1>GiaSuHub</h1>
+    </div>
+    <div class="tagline">Sổ theo dõi buổi dạy &amp; thu nhập</div>
+    <div class="month-nav">
+        <button id="prevMonth">&#8249;</button>
+        <span class="month-label" id="monthLabel"></span>
+        <button id="nextMonth">&#8250;</button>
+    </div>
+</div>
+
+<!-- TALLY ROW -->
+<div class="tally-row">
+    <div class="tally-tab"><div class="lbl">Đã dạy</div><div class="val v-ink" id="s-done">0</div></div>
+    <div class="tally-tab"><div class="lbl">Tổng buổi</div><div class="val v-ink" id="s-sessions">0</div></div>
+    <div class="tally-tab"><div class="lbl">Tiền đã có</div><div class="val v-red" id="s-money">0đ</div></div>
+</div>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+    <div style="height:6px"></div>
+    <div class="ledger-card">
+        <div class="cal-dow"><span>CN</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span></div>
+        <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+        <div class="ledger-section-title" id="dayPanelTitle" style="flex:1;margin-top:0;"></div>
+        <button id="fabAddSlot" onclick="openAddSlot()" aria-label="Thêm buổi cho ngày này">+</button>
+    </div>
+    <div class="ledger-card" id="dayPanel" style="padding-top:2px;padding-bottom:2px;"></div>
+</div>
+
+<!-- MANAGE -->
+<div class="page" id="page-manage">
+    <div style="height:6px"></div>
+    <div class="ledger-card">
+        <h3>Thêm lớp mới</h3>
+        <label>Tên lớp</label>
+        <input type="text" id="f-name" placeholder="VD: Toán 9 - Bé An">
+        <label>Giá / buổi (đ)</label>
+        <input type="number" id="f-price" placeholder="VD: 150000">
+        <button class="btn-primary" style="width:100%" onclick="addClass()">Thêm lớp</button>
+    </div>
+    <div class="ledger-card">
+        <h3>Danh sách lớp</h3>
+        <div id="classList"></div>
+    </div>
+</div>
+
+<!-- EXPORT -->
+<div class="page" id="page-export">
+    <div style="height:6px"></div>
+    <div class="ledger-card">
+        <h3>Tổng kết tháng</h3>
+        <div class="export-row"><span class="lbl">Buổi đã dạy</span><span class="val c-ink" id="e-done">0</span></div>
+        <div class="export-row"><span class="lbl">Tổng buổi trong tháng</span><span class="val c-ink" id="e-sessions">0</span></div>
+        <div class="export-row"><span class="lbl">Tiền đã nhận</span><span class="val c-red" id="e-money">0đ</span></div>
+        <div class="export-row"><span class="lbl">Dự kiến cả tháng</span><span class="val c-gold" id="e-projected">0đ</span></div>
+    </div>
+    <div class="ledger-card">
+        <h3>Chi tiết theo lớp</h3>
+        <div id="exportClassList"></div>
+        <div style="height:6px"></div>
+        <button class="btn-copy" onclick="copyExport()">Copy toàn bộ báo cáo</button>
+    </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="overlay" id="editOverlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <h3 id="modalTitle">Sửa buổi học</h3>
+        <div class="modal-sub" id="modalSub"></div>
+        <label>Giá buổi này (đ)</label>
+        <input type="number" id="m-price" placeholder="Để trống = dùng giá mặc định">
+        <div class="price-hint" id="priceHint"></div>
+        <label>Ghi chú</label>
+        <input type="text" id="m-note" placeholder="VD: học bù, nghỉ lễ...">
+        <div class="modal-actions">
+            <button class="btn-ghost" onclick="closeModal()">Huỷ</button>
+            <button class="btn-primary" onclick="saveEdit()">Lưu</button>
+        </div>
+        <button class="btn-delete-extra" id="deleteExtraBtn" style="display:none" onclick="deleteCurrentExtra()">Xoá buổi thêm này</button>
+    </div>
+</div>
+
+<!-- ADD SLOT MODAL -->
+<div class="overlay" id="addSlotOverlay" onclick="if(event.target===this) closeAddSlot()">
+    <div class="modal">
+        <div class="modal-handle"></div>
+        <h3 id="addSlotTitle">Thêm buổi</h3>
+        <div class="modal-sub" id="addSlotSub">Buổi học thêm ngoài danh sách thường ngày</div>
+        <label>Chọn lớp</label>
+        <div class="class-picker" id="addSlotPicker"></div>
+        <label>Giá buổi này (đ)</label>
+        <input type="number" id="as-price" placeholder="Để trống = dùng giá mặc định">
+        <div class="price-hint" id="asSlotPriceHint"></div>
+        <label>Ghi chú</label>
+        <input type="text" id="as-note" placeholder="VD: dạy bù...">
+        <div class="modal-actions">
+            <button class="btn-ghost" onclick="closeAddSlot()">Huỷ</button>
+            <button class="btn-primary" onclick="confirmAddSlot()">Thêm ngay</button>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+        <div class="confirm-icon" id="confirmIcon">🗑️</div>
+        <div class="confirm-title" id="confirmTitle"></div>
+        <div class="confirm-msg" id="confirmMsg"></div>
+        <div class="confirm-btns">
+            <button class="btn-ghost" onclick="closeConfirm()">Huỷ</button>
+            <button class="btn-danger-full" id="confirmOkBtn">Xác nhận</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+    <button class="nav-btn active" data-tab="home" onclick="switchTab('home')">
+        <span class="nav-icon">📅</span>Lịch dạy
+    </button>
+    <button class="nav-btn" data-tab="manage" onclick="switchTab('manage')">
+        <span class="nav-icon">📚</span>Quản lý lớp
+    </button>
+    <button class="nav-btn" data-tab="export" onclick="switchTab('export')">
+        <span class="nav-icon">📊</span>Báo cáo
+    </button>
+</div>
+
+<script>
+    /* ============================================================
+       DATA MODEL (v4) — logic giữ nguyên như bản trước, chỉ đổi giao diện
+       state.classes = [{ id, name, price }]
+       state.slots   = { "y-m-d_classId": { taught, priceOverride, note } }
+       state.extras  = { extraId: { y, m, d, classId, taught, priceOverride, note } }
+       ============================================================ */
+
+    const KEY = 'gsnote_v4';
+    const OLD_KEY = 'gsnote_v3';
+    const DAYS_FULL = ['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'];
+    const MONTH_VI = ['Th1','Th2','Th3','Th4','Th5','Th6','Th7','Th8','Th9','Th10','Th11','Th12'];
+
+    let state = loadState();
+    let viewDate = new Date();
+    let selectedDate = null;
+    let mCtx = null;
+    let addSlotSelectedClassId = null;
+    let confirmAction = null;
+
+    function loadState(){
+      try{
+        const cur = localStorage.getItem(KEY);
+        if(cur){
+          const s = JSON.parse(cur);
+          if(!s.extras) s.extras = {};
+          return s;
+        }
+        const old = localStorage.getItem(OLD_KEY);
+        if(old) return migrateState(JSON.parse(old));
+      }catch(e){}
+      return {classes:[], slots:{}, extras:{}};
+    }
+
+    function migrateState(raw){
+      if(!raw || !Array.isArray(raw.classes)) return {classes:[], slots:{}, extras:{}};
+      const classes = raw.classes.map(c=>({id:c.id, name:c.name, price:c.price}));
+      const slots = {};
+      const extras = {};
+      const oldSlots = raw.slots || {};
+      let extraCounter = 0;
+      Object.keys(oldSlots).forEach(k=>{
+        const old = oldSlots[k];
+        if(!old || old.classId==null) return;
+        const ymd = k.split('_')[0];
+        const [y,m,d] = ymd.split('-').map(Number);
+        if(old.isExtra){
+          const eid = 'mig'+(++extraCounter);
+          extras[eid] = {
+            y, m, d, classId: old.classId,
+            taught: !!old.taught,
+            priceOverride: (old.priceOverride!=null ? old.priceOverride : null),
+            note: old.note || ''
+          };
+        } else {
+          const newKey = `${ymd}_${old.classId}`;
+          const existing = slots[newKey];
+          if(!existing || (!existing.taught && old.taught)){
+            slots[newKey] = {
+              taught: !!old.taught,
+              priceOverride: (old.priceOverride!=null ? old.priceOverride : null),
+              note: old.note || ''
+            };
+          }
+        }
+      });
+      return {classes, slots, extras};
+    }
+
+    function saveState(){
+      localStorage.setItem(KEY, JSON.stringify(state));
+      if(window.AndroidBridge && AndroidBridge.saveWidgetState){
+        try{ AndroidBridge.saveWidgetState(JSON.stringify(state)); }catch(e){}
+      }
+    }
+
+    function fmtMoney(n){
+      n = Math.round(n||0);
+      return n.toLocaleString('vi-VN') + 'đ';
+    }
+
+    function slotKey(y,m,d,classId){ return `${y}-${m}-${d}_${classId}`; }
+
+    function effectivePrice(cls, slot){
+      return (slot.priceOverride!=null) ? slot.priceOverride : cls.price;
+    }
+
+    function getSlotsForDate(y,m,d){
+      const list = state.classes.map(cls=>{
+        const k = slotKey(y,m,d,cls.id);
+        if(!state.slots[k]) state.slots[k] = {taught:false, priceOverride:null, note:''};
+        return {cls, slot: state.slots[k], ref:'c'+cls.id, extra:false};
+      });
+      const ymd = `${y}-${m}-${d}`;
+      Object.keys(state.extras).forEach(eid=>{
+        const ex = state.extras[eid];
+        if(`${ex.y}-${ex.m}-${ex.d}` !== ymd) return;
+        const cls = state.classes.find(c=>c.id===ex.classId);
+        if(!cls) return;
+        list.push({cls, slot: ex, ref:'x'+eid, extra:true});
+      });
+      return list;
+    }
+
+    function getSlotByRef(y,m,d,ref){
+      if(ref[0]==='c'){
+        const classId = Number(ref.slice(1));
+        return state.slots[slotKey(y,m,d,classId)];
+      }
+      return state.extras[ref.slice(1)];
+    }
+
+    function countTaughtThisMonth(classId, y, m){
+      const dim = new Date(y, m+1, 0).getDate();
+      let count = 0;
+      for(let d=1; d<=dim; d++){
+        const k = slotKey(y,m,d,classId);
+        const slot = state.slots[k];
+        if(slot && slot.taught) count++;
+      }
+      Object.keys(state.extras).forEach(eid=>{
+        const ex = state.extras[eid];
+        if(ex.classId===classId && ex.y===y && ex.m===m && ex.taught) count++;
+      });
+      return count;
+    }
+
+    /* ---- TAB SWITCH ---- */
+    function switchTab(id){
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById('page-'+id).classList.add('active');
+      document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===id));
+      document.getElementById('fabAddSlot').classList.toggle('visible', id==='home');
+      if(id==='manage') renderClassList();
+      if(id==='export') renderExport();
+    }
+
+    /* ---- CALENDAR ---- */
+    function renderCalendar(){
+      const y = viewDate.getFullYear(), m = viewDate.getMonth();
+      document.getElementById('monthLabel').textContent = `${MONTH_VI[m]}/${y}`;
+      const grid = document.getElementById('calGrid');
+      const firstDow = new Date(y,m,1).getDay();
+      const dim = new Date(y,m+1,0).getDate();
+      const today = new Date();
+      let html='';
+      for(let i=0;i<firstDow;i++) html += `<div class="cal-day empty"></div>`;
+      for(let d=1; d<=dim; d++){
+        const slots = getSlotsForDate(y,m,d);
+        const total = slots.length;
+        const done = slots.filter(s=>s.slot.taught).length;
+        const isToday = today.getFullYear()===y && today.getMonth()===m && today.getDate()===d;
+        const isSel = selectedDate && selectedDate.y===y && selectedDate.m===m && selectedDate.d===d;
+        let ticks='';
+        for(let i=0;i<Math.min(total,5);i++) ticks += `<span class="tick ${i<done?'done':''}"></span>`;
+        html += `<div class="cal-day ${isToday?'today':''} ${isSel?'selected':''}" onclick="selectDay(${y},${m},${d})">
+          <span class="dnum">${d}</span><span class="ticks">${ticks}</span>
+        </div>`;
+      }
+      grid.innerHTML = html;
+      renderSummary();
+    }
+
+    function selectDay(y,m,d){
+      selectedDate = {y,m,d};
+      renderCalendar();
+      renderDayPanel(y,m,d);
+    }
+
+    function renderSummary(){
+      const y = viewDate.getFullYear(), m = viewDate.getMonth();
+      const dim = new Date(y,m+1,0).getDate();
+      let sessions=0, done=0, money=0;
+      for(let d=1; d<=dim; d++){
+        getSlotsForDate(y,m,d).forEach(({cls,slot})=>{
+          sessions++;
+          if(slot.taught){ done++; money += effectivePrice(cls,slot); }
+        });
+      }
+      document.getElementById('s-done').textContent = done;
+      document.getElementById('s-sessions').textContent = sessions;
+      document.getElementById('s-money').textContent = fmtMoney(money);
+    }
+
+    /* ---- DAY PANEL ---- */
+    function renderDayPanel(y,m,d){
+      document.getElementById('dayPanelTitle').textContent =
+        `${DAYS_FULL[new Date(y,m,d).getDay()]}, ${d}/${m+1}`;
+      const panel = document.getElementById('dayPanel');
+      const slots = getSlotsForDate(y,m,d);
+      if(!slots.length){
+        panel.innerHTML = `<div class="ledger-empty"><div class="icon">🐷</div>Chưa có lớp nào.<br>Vào "Quản lý lớp" để thêm lớp nhé!</div>`;
+        return;
+      }
+      panel.innerHTML = slots.map(({cls,slot,ref,extra})=>{
+        const price = effectivePrice(cls,slot);
+        const monthCount = countTaughtThisMonth(cls.id, y, m);
+        return `
+        <div class="ledger-line">
+          <button class="stamp-btn ${slot.taught?'on':''}" onclick="toggleTaught(${y},${m},${d},'${ref}')">✓</button>
+          <div class="line-body">
+            <div class="line-top">
+              <span class="name">${cls.name}</span>
+              ${extra?'<span class="tag-mini tag-extra">buổi thêm</span>':''}
+              <span class="tag-mini">${monthCount} buổi/tháng</span>
+            </div>
+            <div class="meta">${slot.note ? slot.note : ''}</div>
+          </div>
+          <div class="line-right">
+            <span class="money ${slot.taught?'':'off'}">${fmtMoney(price)}</span>
+            <button class="btn-edit-mini" onclick="openEdit(${y},${m},${d},'${ref}')">Sửa</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function toggleTaught(y,m,d,ref){
+      const slot = getSlotByRef(y,m,d,ref);
+      if(!slot) return;
+      slot.taught = !slot.taught;
+      saveState();
+      renderCalendar();
+      renderDayPanel(y,m,d);
+    }
+
+    /* ---- EDIT MODAL ---- */
+    function openEdit(y,m,d,ref){
+      const slot = getSlotByRef(y,m,d,ref);
+      if(!slot) return;
+      const classId = ref[0]==='c' ? Number(ref.slice(1)) : slot.classId;
+      const cls = state.classes.find(c=>c.id===classId);
+      mCtx = {y,m,d,ref};
+      document.getElementById('modalTitle').textContent = `Sửa buổi — ${cls ? cls.name : ''}`;
+      document.getElementById('modalSub').textContent = `${DAYS_FULL[new Date(y,m,d).getDay()]}, ${d}/${m+1}/${y}`;
+      document.getElementById('m-price').value = slot.priceOverride!=null ? slot.priceOverride : '';
+      document.getElementById('priceHint').textContent = cls ? `Giá mặc định của ${cls.name}: ${fmtMoney(cls.price)}` : '';
+      document.getElementById('m-note').value = slot.note || '';
+      document.getElementById('deleteExtraBtn').style.display = ref[0]==='x' ? 'block' : 'none';
+      document.getElementById('editOverlay').classList.add('show');
+    }
+
+    function closeModal(){
+      document.getElementById('editOverlay').classList.remove('show');
+      mCtx = null;
+    }
+
+    function saveEdit(){
+      if(!mCtx) return;
+      const {y,m,d,ref} = mCtx;
+      const slot = getSlotByRef(y,m,d,ref);
+      if(!slot) return;
+      const priceVal = document.getElementById('m-price').value;
+      slot.priceOverride = priceVal!=='' ? parseFloat(priceVal) : null;
+      slot.note = document.getElementById('m-note').value.trim();
+      saveState();
+      closeModal();
+      renderCalendar();
+      renderDayPanel(y,m,d);
+      showToast('Đã lưu thay đổi');
+    }
+
+    function deleteCurrentExtra(){
+      if(!mCtx || mCtx.ref[0]!=='x') return;
+      const {y,m,d,ref} = mCtx;
+      delete state.extras[ref.slice(1)];
+      saveState();
+      closeModal();
+      renderCalendar();
+      renderDayPanel(y,m,d);
+      showToast('Đã xoá buổi thêm');
+    }
+
+    /* ---- ADD SLOT ---- */
+    function openAddSlot(){
+      if(!selectedDate){
+        const td = new Date();
+        selectedDate = {y:td.getFullYear(), m:td.getMonth(), d:td.getDate()};
+        renderCalendar();
+        renderDayPanel(selectedDate.y, selectedDate.m, selectedDate.d);
+      }
+      const {y,m,d} = selectedDate;
+      document.getElementById('addSlotTitle').textContent = `Thêm buổi — ${d}/${m+1}/${y}`;
+      document.getElementById('addSlotSub').textContent =
+        `${DAYS_FULL[new Date(y,m,d).getDay()]} · Buổi học thêm ngoài danh sách thường`;
+
+      const picker = document.getElementById('addSlotPicker');
+      if(!state.classes.length){
+        picker.innerHTML = `<div style="color:var(--ink-soft);font-size:.8rem">Chưa có lớp nào. Vào Quản lý để thêm lớp trước.</div>`;
+        addSlotSelectedClassId = null;
+      } else {
+        addSlotSelectedClassId = state.classes[0].id;
+        picker.innerHTML = state.classes.map((c,i)=>`
+          <button class="class-chip ${i===0?'selected':''}" data-cid="${c.id}" onclick="pickAddSlotChip(${c.id})">${c.name}</button>`).join('');
+        updateAddSlotPriceHint(addSlotSelectedClassId);
+      }
+      document.getElementById('as-price').value='';
+      document.getElementById('as-note').value='';
+      document.getElementById('addSlotOverlay').classList.add('show');
+    }
+
+    function pickAddSlotChip(cid){
+      addSlotSelectedClassId = cid;
+      document.querySelectorAll('#addSlotPicker .class-chip').forEach(ch=>{
+        ch.classList.toggle('selected', parseInt(ch.dataset.cid)===cid);
+      });
+      updateAddSlotPriceHint(cid);
+    }
+
+    function updateAddSlotPriceHint(cid){
+      const cls = state.classes.find(c=>c.id===cid);
+      document.getElementById('asSlotPriceHint').textContent = cls ? `Giá mặc định: ${fmtMoney(cls.price)}` : '';
+    }
+
+    function closeAddSlot(){
+      document.getElementById('addSlotOverlay').classList.remove('show');
+    }
+
+    function confirmAddSlot(){
+      if(!addSlotSelectedClassId){ showToast('Chọn lớp trước nhé!'); return; }
+      if(!selectedDate){ showToast('Chọn ngày trước nhé!'); return; }
+      const {y,m,d} = selectedDate;
+      const cls = state.classes.find(c=>c.id===addSlotSelectedClassId);
+      if(!cls) return;
+
+      const priceVal = document.getElementById('as-price').value;
+      const note = document.getElementById('as-note').value.trim();
+      const eid = 'e'+Date.now();
+
+      state.extras[eid] = {
+        y, m, d, classId: cls.id,
+        taught:false,
+        priceOverride: priceVal!=='' ? parseFloat(priceVal) : null,
+        note
+      };
+
+      saveState();
+      closeAddSlot();
+      renderCalendar();
+      renderDayPanel(y,m,d);
+      showToast('Đã thêm buổi cho '+cls.name);
+    }
+
+    /* ---- MANAGE ---- */
+    function addClass(){
+      const name = document.getElementById('f-name').value.trim();
+      const price = parseFloat(document.getElementById('f-price').value) || 0;
+      if(!name){ showToast('Vui lòng nhập tên lớp!'); return; }
+      state.classes.push({id: Date.now(), name, price});
+      saveState();
+      document.getElementById('f-name').value='';
+      document.getElementById('f-price').value='';
+      renderClassList();
+      renderCalendar();
+      if(selectedDate) renderDayPanel(selectedDate.y, selectedDate.m, selectedDate.d);
+      showToast('Đã thêm lớp '+name);
+    }
+
+    function renderClassList(){
+      const el = document.getElementById('classList');
+      if(!state.classes.length){
+        el.innerHTML = `<div class="ledger-empty"><div class="icon">📚</div>Chưa có lớp nào.</div>`;
+        return;
+      }
+      el.innerHTML = state.classes.map(c=>`
+        <div class="class-list-item">
+          <div class="info">
+            <div class="name">${c.name}</div>
+            <div class="meta">${fmtMoney(c.price)}/buổi</div>
+          </div>
+          <button class="btn-void" onclick="confirmDeleteClass(${c.id})">Xoá</button>
+        </div>`).join('');
+    }
+
+    function confirmDeleteClass(id){
+      const cls = state.classes.find(c=>c.id===id);
+      if(!cls) return;
+      showConfirm('🗑️', `Xoá lớp ${cls.name}?`,
+        'Toàn bộ lịch sử buổi dạy và ghi chú của lớp này sẽ bị xoá vĩnh viễn.',
+        'Xoá lớp', ()=>deleteClass(id));
+    }
+
+    function deleteClass(id){
+      state.classes = state.classes.filter(c=>c.id!==id);
+      Object.keys(state.slots).forEach(k=>{
+        if(k.split('_')[1] === String(id)) delete state.slots[k];
+      });
+      Object.keys(state.extras).forEach(eid=>{
+        if(String(state.extras[eid].classId) === String(id)) delete state.extras[eid];
+      });
+      saveState();
+      renderClassList();
+      renderCalendar();
+      if(selectedDate) renderDayPanel(selectedDate.y, selectedDate.m, selectedDate.d);
+      showToast('Đã xoá lớp');
+    }
+
+    /* ---- MONTH NAV ---- */
+    document.getElementById('prevMonth').onclick = ()=>{
+      viewDate.setMonth(viewDate.getMonth()-1);
+      selectedDate = null;
+      renderCalendar();
+      document.getElementById('dayPanel').innerHTML='';
+      document.getElementById('dayPanelTitle').textContent='';
+    };
+    document.getElementById('nextMonth').onclick = ()=>{
+      viewDate.setMonth(viewDate.getMonth()+1);
+      selectedDate = null;
+      renderCalendar();
+      document.getElementById('dayPanel').innerHTML='';
+      document.getElementById('dayPanelTitle').textContent='';
+    };
+
+    /* ---- EXPORT ---- */
+    function collectExportData(){
+      const y = viewDate.getFullYear(), m = viewDate.getMonth();
+      const dim = new Date(y,m+1,0).getDate();
+      const perClass = {};
+      state.classes.forEach(c=>{ perClass[c.id] = {cls:c, scheduledBuoi:0, totalBuoi:0, totalMoney:0, projectedMoney:0, sessions:[]}; });
+
+      for(let d=1; d<=dim; d++){
+        getSlotsForDate(y,m,d).forEach(({cls,slot})=>{
+          const pc = perClass[cls.id];
+          if(!pc) return;
+          const price = effectivePrice(cls,slot);
+          pc.scheduledBuoi++;
+          pc.projectedMoney += price;
+          if(slot.taught){
+            pc.totalBuoi++;
+            pc.totalMoney += price;
+            pc.sessions.push({d, dow:new Date(y,m,d).getDay(), price, note:slot.note});
+          }
+        });
+      }
+      return {y, m, perClass};
+    }
+
+    function buildClassText(c, pc, m, y){
+      const lines = [];
+      lines.push(`${c.name} — ${pc.totalBuoi}/${pc.scheduledBuoi} buổi — ${fmtMoney(pc.totalMoney)} / dự kiến ${fmtMoney(pc.projectedMoney)}`);
+      pc.sessions.forEach(s=>{
+        const noteStr = s.note ? ` · ${s.note}` : '';
+        lines.push(`  • ${DAYS_FULL[s.dow]} ${s.d.toString().padStart(2,'0')}/${(m+1).toString().padStart(2,'0')} — ${fmtMoney(s.price)}${noteStr}`);
+      });
+      return lines.join('\n');
+    }
+
+    function renderExport(){
+      const {y, m, perClass} = collectExportData();
+      let totalSessions=0, totalDone=0, totalMoney=0, totalProjected=0;
+      const list = document.getElementById('exportClassList');
+      let html='';
+
+      Object.values(perClass).forEach(pc=>{
+        totalSessions += pc.scheduledBuoi;
+        totalDone += pc.totalBuoi;
+        totalMoney += pc.totalMoney;
+        totalProjected += pc.projectedMoney;
+
+        const sessionsHtml = pc.sessions.map(s=>`
+          <div class="session-row">
+            <span class="s-date">${DAYS_FULL[s.dow]} ${s.d.toString().padStart(2,'0')}/${(m+1).toString().padStart(2,'0')}</span>
+            ${s.note ? `<span class="s-note">${s.note}</span>` : ''}
+            <span class="s-price">${fmtMoney(s.price)}</span>
+          </div>`).join('');
+
+        html += `
+        <div class="cls-block">
+          <div class="cls-block-header">
+            <div>
+              <div class="cls-name">${pc.cls.name}</div>
+              <div class="cls-sub-meta">${fmtMoney(pc.cls.price)}/buổi</div>
+            </div>
+            <div class="cls-block-right">
+              <span class="badge-buoi ${pc.totalBuoi?'has-done':''}">${pc.totalBuoi}/${pc.scheduledBuoi} buổi</span>
+              <div class="cls-money ${pc.totalMoney?'':'zero'}">${fmtMoney(pc.totalMoney)}</div>
+            </div>
+          </div>
+          ${pc.sessions.length ? `<div class="cls-sessions">${sessionsHtml}</div>` : ''}
+          <button class="btn-copy-cls-full" data-cid="${pc.cls.id}">Copy riêng lớp này</button>
+        </div>`;
+      });
+
+      list.innerHTML = html || `<div class="ledger-empty"><div class="icon">📊</div>Chưa có lớp nào.</div>`;
+      document.getElementById('e-done').textContent = totalDone;
+      document.getElementById('e-sessions').textContent = totalSessions;
+      document.getElementById('e-money').textContent = fmtMoney(totalMoney);
+      document.getElementById('e-projected').textContent = fmtMoney(totalProjected);
+    }
+
+    function copyExport(){
+      const {y, m, perClass} = collectExportData();
+      const lines = [`BÁO CÁO ${MONTH_VI[m]}/${y}`, ''];
+      Object.values(perClass).forEach(pc=>{
+        lines.push(buildClassText(pc.cls, pc, m, y));
+        lines.push('');
+      });
+      copyText(lines.join('\n').trim());
+    }
+
+    function copyClass(classIdStr){
+      const {y, m, perClass} = collectExportData();
+      const pc = perClass[Number(classIdStr)];
+      if(!pc) return;
+      copyText(buildClassText(pc.cls, pc, m, y));
+    }
+
+    document.getElementById('page-export').addEventListener('click', function(e){
+      const btn = e.target.closest('.btn-copy-cls-full');
+      if(btn) copyClass(btn.dataset.cid);
+    });
+
+    function copyText(text){
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(()=>showToast('Đã copy!')).catch(()=>fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+    function fallbackCopy(text){
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); showToast('Đã copy!'); }catch(e){ showToast('Không copy được'); }
+      document.body.removeChild(ta);
+    }
+
+    /* ---- CONFIRM DIALOG ---- */
+    function showConfirm(icon, title, msg, okLabel, action){
+      document.getElementById('confirmIcon').textContent = icon;
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmMsg').textContent = msg;
+      const okBtn = document.getElementById('confirmOkBtn');
+      okBtn.textContent = okLabel;
+      confirmAction = action;
+      okBtn.onclick = ()=>{ if(confirmAction) confirmAction(); closeConfirm(); };
+      document.getElementById('confirmOverlay').classList.add('show');
+    }
+    function closeConfirm(){
+      document.getElementById('confirmOverlay').classList.remove('show');
+      confirmAction = null;
+    }
+
+    /* ---- TOAST ---- */
+    let toastTimer = null;
+    function showToast(msg){
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+    }
+
+    /* ---- ANDROID WIDGET SYNC ---- */
+    function syncFromWidget(){
+      try{
+        if(window.AndroidBridge && AndroidBridge.getWidgetState){
+          const raw = AndroidBridge.getWidgetState();
+          if(raw){
+            const incoming = JSON.parse(raw);
+            if(incoming && Array.isArray(incoming.classes)){
+              state = incoming;
+              if(!state.extras) state.extras = {};
+              renderCalendar();
+              if(selectedDate) renderDayPanel(selectedDate.y, selectedDate.m, selectedDate.d);
+            }
+          }
+        }
+      }catch(e){}
+    }
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) syncFromWidget(); });
+    window.addEventListener('focus', syncFromWidget);
+
+    /* ---- INIT ---- */
+    renderCalendar();
+    renderClassList();
+    const t = new Date();
+    selectDay(t.getFullYear(), t.getMonth(), t.getDate());
+    document.getElementById('fabAddSlot').classList.add('visible');
+</script>
+</body>
+</html>
